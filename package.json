@@ -6,6 +6,7 @@
   "description": "利率与汇率监控仪表盘（自用）",
   "scripts": {
     "start": "node server.js",
+    "update": "node update-data.mjs",
     "test": "node --test"
   }
 }
