@@ -8,12 +8,12 @@ import { REGISTRY, getEntry } from "./lib/registry.js";
 import { getSeries } from "./lib/series-service.js";
 import { sliceByRange, summarizeSeries } from "./lib/util.js";
 import { templateInsight } from "./lib/quant.js";
-import { enrichWithOllama } from "./lib/ollama.js";
+import { enrichWithClaude } from "./lib/claude-cli.js";
 
 const env = loadEnv();
 const PORT = Number(env.PORT) || 8787;
-const OLLAMA_URL = env.OLLAMA_URL || "http://localhost:11434";
-const OLLAMA_MODEL = env.OLLAMA_MODEL || "qwen2.5:3b";
+const CLAUDE_BIN = env.CLAUDE_BIN || "claude";
+const CLAUDE_MODEL = env.CLAUDE_MODEL || "sonnet";
 const cache = createCache();
 const insightCache = createCache();
 
@@ -92,7 +92,7 @@ const server = createServer(async (req, res) => {
       const s = await getSeries(id, { cache });
       if (!s.points.length) return json(res, 400, { error: "该标的暂无数据，无法研判" });
       const base = templateInsight(s, e.label);
-      const insight = await enrichWithOllama(base, { url: OLLAMA_URL, model: OLLAMA_MODEL });
+      const insight = await enrichWithClaude(base, { bin: CLAUDE_BIN, model: CLAUDE_MODEL });
       insightCache.set(ck, insight, 6 * 60 * 60 * 1000);
       return json(res, 200, insight);
     } catch (err) {

@@ -106,8 +106,8 @@ function renderInsight(ins) {
       </div>`).join("");
     return `<div class="horizon"><h3>${h.horizon}</h3>${rows}</div>`;
   }).join("");
-  const engineBadge = ins.engine === "ollama"
-    ? `<span class="badge ok">本地 Ollama 叙述</span>`
+  const engineBadge = ins.engine === "claude"
+    ? `<span class="badge ok">Claude 叙述</span>`
     : `<span class="badge warn">纯量化兜底</span>`;
   const g = ins.signals || {};
   const signalRow = g.trend
@@ -122,14 +122,14 @@ function renderInsight(ins) {
       <div>风险：${(ins.key_risks || []).join("；")}</div>
       <div class="imp">关注：${(ins.watch_items || []).join("；")}</div>
     </div>
-    <div class="meta-row">⚠ 概率由量化信号确定；叙述由本地模型生成，非投资建议。</div>`;
+    <div class="meta-row">⚠ 概率由量化信号确定；叙述由 Claude 生成，非投资建议。</div>`;
 }
 
 function initInsight() {
   $("#insight-run").addEventListener("click", async () => {
     const id = $("#insight-id").value;
     const status = $("#insight-status"), out = $("#insight-output");
-    status.textContent = "生成中…（量化即时 + 本地模型叙述约 20–40s；Ollama 未运行则退回纯量化）"; out.innerHTML = "";
+    status.textContent = "生成中…（量化即时 + Claude sonnet 深度叙述约 40–90s；claude 不可用则退回纯量化）"; out.innerHTML = "";
     try {
       const res = await fetch(`/api/insight?id=${id}`);
       const data = await res.json();
