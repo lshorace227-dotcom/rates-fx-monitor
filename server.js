@@ -85,14 +85,15 @@ const server = createServer(async (req, res) => {
     const id = url.searchParams.get("id");
     const e = getEntry(id);
     if (!e) return json(res, 400, { error: `unknown id ${id}` });
-    const ck = `insight:${id}`;
+    const news = url.searchParams.get("news") === "1";
+    const ck = `insight:${id}:${news ? "news" : "plain"}`;
     const hit = insightCache.get(ck);
     if (hit) return json(res, 200, hit);
     try {
       const s = await getSeries(id, { cache });
       if (!s.points.length) return json(res, 400, { error: "该标的暂无数据，无法研判" });
       const base = templateInsight(s, e.label);
-      const insight = await enrichWithClaude(base, { bin: CLAUDE_BIN, model: CLAUDE_MODEL });
+      const insight = await enrichWithClaude(base, { bin: CLAUDE_BIN, model: CLAUDE_MODEL, news });
       insightCache.set(ck, insight, 6 * 60 * 60 * 1000);
       return json(res, 200, insight);
     } catch (err) {

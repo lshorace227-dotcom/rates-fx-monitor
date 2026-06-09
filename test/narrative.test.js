@@ -18,6 +18,12 @@ test("buildNarrativePrompt includes instrument, signals and fixed probabilities"
   assert.match(p, /不要改概率|已确定/);
 });
 
+test("buildNarrativePrompt news mode asks for WebSearch and sources", () => {
+  const p = buildNarrativePrompt(templateInsight(mkSeries(), "SOFR"), { news: true });
+  assert.match(p, /WebSearch/);
+  assert.match(p, /sources/);
+});
+
 test("extractJson strips ```json fences", () => {
   assert.deepEqual(extractJson("```json\n{\"a\":1}\n```"), { a: 1 });
 });
@@ -44,4 +50,12 @@ test("mergeNarrative replaces narrative, keeps quant probs, sets engine=claude",
   assert.deepEqual(up.drivers, ["新驱动"]);
   assert.equal(up.prob, baseProb); // 概率不变
   assert.ok(out.horizons[1].scenarios[0].credit_macro_implication); // 未提供档位保留模板
+});
+
+test("mergeNarrative passes through sources when present", () => {
+  const base = templateInsight(mkSeries(), "SOFR");
+  const out = mergeNarrative(base, { sources: [{ title: "Fed holds", url: "https://x.com/a" }] }, "claude+news");
+  assert.equal(out.engine, "claude+news");
+  assert.equal(out.sources.length, 1);
+  assert.equal(out.sources[0].url, "https://x.com/a");
 });

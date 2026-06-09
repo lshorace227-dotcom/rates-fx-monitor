@@ -114,9 +114,15 @@ function renderInsight(ins) {
       </div>`).join("");
     return `<div class="horizon"><h3>${h.horizon}</h3>${rows}</div>`;
   }).join("");
-  const engineBadge = ins.engine === "claude"
-    ? `<span class="badge ok">Claude 叙述</span>`
-    : `<span class="badge warn">纯量化兜底</span>`;
+  const engineBadge = ins.engine === "claude+news"
+    ? `<span class="badge ok">Claude + 实时新闻</span>`
+    : ins.engine === "claude"
+      ? `<span class="badge ok">Claude 叙述</span>`
+      : `<span class="badge warn">纯量化兜底</span>`;
+  const sourcesBlock = Array.isArray(ins.sources) && ins.sources.length
+    ? `<div class="horizon"><h3>引用新闻来源</h3>${ins.sources.map(s =>
+        `<div class="imp">· <a href="${s.url}" target="_blank" rel="noopener">${s.title || s.url}</a></div>`).join("")}</div>`
+    : "";
   const g = ins.signals || {};
   const signalRow = g.trend
     ? `<div class="meta-row">量化信号：趋势 <b>${g.trend}</b> · z=${g.zScore} · 近端动量 ${g.shortMom} · 日波动 ${g.vol} · 区间位置 ${Math.round((g.rangePos ?? 0.5) * 100)}%</div>`
@@ -130,16 +136,21 @@ function renderInsight(ins) {
       <div>风险：${(ins.key_risks || []).join("；")}</div>
       <div class="imp">关注：${(ins.watch_items || []).join("；")}</div>
     </div>
+    ${sourcesBlock}
     <div class="meta-row">⚠ 概率由量化信号确定；叙述由 Claude 生成，非投资建议。</div>`;
 }
 
 function initInsight() {
   $("#insight-run").addEventListener("click", async () => {
     const id = $("#insight-id").value;
+    const news = $("#insight-news")?.checked ? 1 : 0;
     const status = $("#insight-status"), out = $("#insight-output");
-    status.textContent = "生成中…（量化即时 + Claude sonnet 深度叙述约 40–90s；claude 不可用则退回纯量化）"; out.innerHTML = "";
+    status.textContent = news
+      ? "生成中…（Claude 检索实时新闻 + 深度叙述，约 1–3 分钟；claude 不可用则退回纯量化）"
+      : "生成中…（量化 + Claude 叙述约 40–90s；claude 不可用则退回纯量化）";
+    out.innerHTML = "";
     try {
-      const res = await fetch(`/api/insight?id=${id}`);
+      const res = await fetch(`/api/insight?id=${id}&news=${news}`);
       const data = await res.json();
       if (data.error) { status.textContent = "⚠ " + data.error; return; }
       status.textContent = "";
