@@ -1,0 +1,13 @@
+{
+  "label": "HIBOR 香港银行同业拆息（本地兜底）",
+  "source": "HKAB/HKMA 公布值，手动录入（HKMA 实时 API 受 WAF 阻断时回退）",
+  "freq": "daily",
+  "unit": "%",
+  "caveat": "本地兜底值，可能非最新；HKMA 实时可达时以实时为准",
+  "series": {
+    "HIBOR_ON":  [ { "date": "2026-06-05", "value": 2.60 } ],
+    "HIBOR_1M":  [ { "date": "2026-06-05", "value": 2.715 } ],
+    "HIBOR_3M":  [ { "date": "2026-06-05", "value": 2.85 } ],
+    "HIBOR_12M": [ { "date": "2026-06-05", "value": 3.05 } ]
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "label": "Shibor 上海银行间同业拆放利率",
+  "source": "手动录入（无稳定免费 CORS 源；官方 www.shibor.org / chinamoney.com.cn）",
+  "freq": "daily",
+  "unit": "%",
+  "caveat": "无免费实时源，下列为近似种子值，可能非最新；请按官方核对口径与日期后更新",
+  "series": {
+    "SHIBOR_ON": [ { "date": "2026-06-05", "value": 1.45 } ],
+    "SHIBOR_3M": [ { "date": "2026-06-05", "value": 1.80 } ]
+  }
+}
