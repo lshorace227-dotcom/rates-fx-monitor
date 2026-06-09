@@ -32,3 +32,6 @@ h2 { font-size:14px; color:var(--muted); font-weight:600; margin:0 0 12px; }
 .scn .bar { height:8px; background:var(--accent); border-radius:4px; margin-bottom:6px; min-width:2px; }
 .scn .imp { color:var(--muted); font-size:12px; margin-top:2px; }
 .meta-row { color:var(--muted); font-size:12px; margin:8px 0; }
+.badge { display:inline-block; padding:1px 8px; border-radius:10px; font-size:11px; margin-right:6px; border:1px solid var(--line); }
+.badge.ok { color:var(--down); border-color:var(--down); }
+.badge.warn { color:#d29922; border-color:#d29922; }

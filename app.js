@@ -106,21 +106,30 @@ function renderInsight(ins) {
       </div>`).join("");
     return `<div class="horizon"><h3>${h.horizon}</h3>${rows}</div>`;
   }).join("");
+  const engineBadge = ins.engine === "ollama"
+    ? `<span class="badge ok">本地 Ollama 叙述</span>`
+    : `<span class="badge warn">纯量化兜底</span>`;
+  const g = ins.signals || {};
+  const signalRow = g.trend
+    ? `<div class="meta-row">量化信号：趋势 <b>${g.trend}</b> · z=${g.zScore} · 近端动量 ${g.shortMom} · 日波动 ${g.vol} · 区间位置 ${Math.round((g.rangePos ?? 0.5) * 100)}%</div>`
+    : "";
   return `
-    <div class="meta-row">标的 ${ins.instrument} · 截至 ${ins.asof} · 当前 ${ins.current_level} · ${ins.recent_move_summary || ""}</div>
+    <div class="meta-row">${engineBadge} 标的 ${ins.label || ins.instrument} · 截至 ${ins.asof} · 当前 ${ins.current_level}${ins.engine_note ? " · " + ins.engine_note : ""}</div>
+    <div class="meta-row">${ins.recent_move_summary || ""}</div>
+    ${signalRow}
     ${horizons}
     <div class="horizon"><h3>关键风险 / 关注项</h3>
       <div>风险：${(ins.key_risks || []).join("；")}</div>
       <div class="imp">关注：${(ins.watch_items || []).join("；")}</div>
     </div>
-    <div class="meta-row">⚠ AI 生成，非投资建议；模型知识有截止且未接入实时新闻。</div>`;
+    <div class="meta-row">⚠ 概率由量化信号确定；叙述由本地模型生成，非投资建议。</div>`;
 }
 
 function initInsight() {
   $("#insight-run").addEventListener("click", async () => {
     const id = $("#insight-id").value;
     const status = $("#insight-status"), out = $("#insight-output");
-    status.textContent = "生成中…（首次约 10–30s）"; out.innerHTML = "";
+    status.textContent = "生成中…（量化即时 + 本地模型叙述约 20–40s；Ollama 未运行则退回纯量化）"; out.innerHTML = "";
     try {
       const res = await fetch(`/api/insight?id=${id}`);
       const data = await res.json();
