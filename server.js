@@ -9,6 +9,7 @@ import { getSeries } from "./lib/series-service.js";
 import { sliceByRange, summarizeSeries } from "./lib/util.js";
 import { templateInsight } from "./lib/quant.js";
 import { enrichWithClaude } from "./lib/claude-cli.js";
+import { fetchNews, newsQueryFor } from "./lib/news.js";
 
 const env = loadEnv();
 const PORT = Number(env.PORT) || 8787;
@@ -93,7 +94,11 @@ const server = createServer(async (req, res) => {
       const s = await getSeries(id, { cache });
       if (!s.points.length) return json(res, 400, { error: "该标的暂无数据，无法研判" });
       const base = templateInsight(s, e.label);
-      const insight = await enrichWithClaude(base, { bin: CLAUDE_BIN, model: CLAUDE_MODEL, news });
+      let articles = null;
+      if (news) {
+        try { articles = await fetchNews(newsQueryFor(id, e.label), { n: 6 }); } catch { /* 抓不到则不带新闻 */ }
+      }
+      const insight = await enrichWithClaude(base, { bin: CLAUDE_BIN, model: CLAUDE_MODEL, articles });
       insightCache.set(ck, insight, 6 * 60 * 60 * 1000);
       return json(res, 200, insight);
     } catch (err) {

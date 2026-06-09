@@ -18,10 +18,12 @@ test("buildNarrativePrompt includes instrument, signals and fixed probabilities"
   assert.match(p, /不要改概率|已确定/);
 });
 
-test("buildNarrativePrompt news mode asks for WebSearch and sources", () => {
-  const p = buildNarrativePrompt(templateInsight(mkSeries(), "SOFR"), { news: true });
-  assert.match(p, /WebSearch/);
-  assert.match(p, /sources/);
+test("buildNarrativePrompt injects provided real-news headlines", () => {
+  const articles = [{ title: "Fed signals hold", source: "Reuters", pubDate: "Wed, 03 Jun 2026 10:00 GMT", url: "https://r.com/a" }];
+  const p = buildNarrativePrompt(templateInsight(mkSeries(), "SOFR"), { articles });
+  assert.match(p, /Fed signals hold/);
+  assert.match(p, /Google News|真实新闻/);
+  assert.doesNotMatch(p, /WebSearch/); // 不再让模型自己搜
 });
 
 test("extractJson strips ```json fences", () => {
