@@ -44,6 +44,7 @@ const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
   const path = url.pathname;
 
+  if (path === "/favicon.ico") { res.writeHead(204); return res.end(); }
   if (STATIC[path]) return serveStatic(res, STATIC[path]);
 
   // 标的清单（前端用来渲染分组与勾选）
