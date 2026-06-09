@@ -62,19 +62,26 @@ async function drawChart() {
   const ids = [...selected];
   const series = await Promise.all(ids.map(id =>
     fetch(`/api/series?id=${id}&range=${curRange}`).then(r => r.json())));
+  const normalize = $("#normalize")?.checked;
   chart.setOption({
     backgroundColor: "transparent",
     tooltip: { trigger: "axis" },
     legend: { textStyle: { color: "#e6edf3" } },
     grid: { left: 52, right: 16, top: 32, bottom: 56 },
     xAxis: { type: "time" },
-    yAxis: { type: "value", scale: true },
+    yAxis: { type: "value", scale: true, name: normalize ? "指数 (基准=100)" : "", nameTextStyle: { color: "#8b949e" } },
     dataZoom: [{ type: "inside" }, { type: "slider" }],
-    series: series.map(s => ({
-      name: s.meta?.label || s.id,
-      type: "line", showSymbol: false, smooth: false,
-      data: (s.points || []).map(p => [p.date, p.value]),
-    })),
+    series: series.map(s => {
+      const pts = s.points || [];
+      const base = normalize && pts.length ? pts[0].value : null;
+      return {
+        name: s.meta?.label || s.id,
+        type: "line",
+        showSymbol: pts.length <= 2,   // 单点/稀疏序列显示为可见圆点，否则隐藏
+        smooth: false,
+        data: pts.map(p => [p.date, base ? +(p.value / base * 100).toFixed(2) : p.value]),
+      };
+    }),
   }, true);
 }
 
@@ -87,6 +94,7 @@ function initRanges() {
       drawChart();
     });
   });
+  $("#normalize")?.addEventListener("change", drawChart);
   window.addEventListener("resize", () => chart && chart.resize());
 }
 
