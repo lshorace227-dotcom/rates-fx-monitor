@@ -17,19 +17,22 @@
 |---|---|---|
 | SOFR / EFFR | **纽约联储 Markets API** | 日度，官方 |
 | 美债 13周/5Y/10Y/30Y | **Yahoo Finance**（^IRX/^FVX/^TNX/^TYX） | 实时盘中 |
-| USD/CNY 在岸 · USD/CNH 离岸 | Yahoo（CNY=X / CNH=X） | 实时盘中 |
+| USD/CNY 在岸 | Yahoo（CNY=X） | 实时盘中，有历史 |
+| USD/CNH 离岸 | Yahoo（CNH=X） | 仅当前值（Yahoo 无历史，图上单点） |
 | 美元指数 DXY | Yahoo（DX-Y.NYB） | 实时，ICE 美元指数 |
-| HIBOR O/N,1M,3M,12M | HKMA 实时 API，失败回退 `data/hibor.json` | 日度；见下「HKMA 说明」 |
+| HIBOR 隔夜 / 1M | HKMA `daily-figures-interbank-liquidity`（免 key，有历史） | 日度，官方 |
+| HIBOR 3M / 12M | 本地 `data/hibor.json` | HKMA 免费 API 无此两档，手动维护 |
 | Shibor | 本地 `data/shibor.json` | 无免费实时源，手动维护 |
 | LPR 1Y/5Y | 本地 `data/lpr.json` | 月度，手动更新（每月 20 日） |
 
 ### HKMA 说明（实测）
-HKMA 开放 API 受阿里云 WAF 保护，**脚本/服务端访问可能被挑战挂起**（本机 curl 与 headless 浏览器均网络层超时；真实浏览器在友好网络下通常可达）。因此 HIBOR 策略为：服务端尽力实时取（5s 超时）→ 失败回退本地 `data/hibor.json`，并在卡片标注。
+HKMA 免费开放 API 的 HIBOR 数据在 `daily-figures-interbank-liquidity` 端点（字段 `hibor_overnight` / `hibor_fixing_1m`），免 key、有历史、服务端可取。**完整期限曲线（3M/12M 等）不在此免费 API**（属 HKAB，无干净接口），故 3M/12M 留作本地手动维护。HKMA 主机受阿里云 WAF 保护、偶发挂起，故取数带超时，失败回退 `data/hibor.json`。
 
 ## 研判（无 key 的「分析」）
 - **量化引擎**（即时、确定）：从序列算 趋势 / 近端动量 / 波动率 / z 分数 / 区间位置，按「短档趋势跟随、长档均值回归」生成**四档（1-3M/3-6M/6-12M/12-24M）× 三情景（上行/中性/下行）概率**（每档和=1）。
 - **Claude 叙述**：把上述信号喂给本地 `claude` CLI（无头，走 Claude Code 订阅、无需 API key），**只改写文字**（驱动、对信贷/宏观的启示、近况、风险/关注），**不改概率**。`claude` 不可用则显示纯量化结果（界面有「纯量化兜底」徽章）。
-- 手动触发，结果缓存 6h。每次研判会起一次 `claude` 子进程，计入你的 Claude Code 用量（带缓存，单次小）。
+- **含实时新闻**（界面勾选，默认开）：放开 `claude` 内置 WebSearch，让它先检索该标的近 1-2 周新闻/数据/央行动向，再结合量化信号写研判，并在结果底部列出**引用来源**（徽章「Claude + 实时新闻」）。更慢（约 1–3 分钟）、用量更高；可取消勾选退回纯叙述（约 40–90s）。
+- 手动触发，结果按 (标的×是否含新闻) 缓存 6h。每次起一次 `claude` 子进程，计入你的 Claude Code 用量。
 
 ## 维护本地数据
 - **LPR**：每月 20 日公布后，在 `data/lpr.json` 追加 `{ "date": "YYYY-MM-DD", "value": x.xx }`。
