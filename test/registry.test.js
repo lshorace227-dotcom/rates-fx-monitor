@@ -21,6 +21,7 @@ test("every entry has group + a no-key source + label", () => {
 test("getEntry returns entry by id", () => {
   assert.equal(getEntry("SOFR").source, "nyfed");
   assert.equal(getEntry("UST_10Y").source, "yahoo");
-  assert.equal(getEntry("HIBOR_3M").source, "hkma");
+  assert.equal(getEntry("HIBOR_ON").source, "hkma");  // 隔夜走真实 HKMA
+  assert.equal(getEntry("HIBOR_3M").source, "local");  // 3M HKMA 免费API无，本地手动
   assert.equal(getEntry("nope"), undefined);
 });

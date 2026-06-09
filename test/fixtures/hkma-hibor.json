@@ -3,9 +3,9 @@
   "result": {
     "datasize": 3,
     "records": [
-      { "end_of_date": "2026-06-05", "ir_overnight": 4.05, "ir_1w": 4.15, "ir_1m": 4.32, "ir_3m": 4.58, "ir_12m": 4.71 },
-      { "end_of_date": "2026-06-04", "ir_overnight": 4.01, "ir_1w": 4.12, "ir_1m": 4.30, "ir_3m": 4.55, "ir_12m": 4.69 },
-      { "end_of_date": "2026-06-03", "ir_overnight": 3.98, "ir_1w": 4.10, "ir_1m": 4.28, "ir_3m": 4.52, "ir_12m": 4.66 }
+      { "end_of_date": "2026-06-09", "hibor_overnight": 1.88, "hibor_fixing_1m": 2.73435 },
+      { "end_of_date": "2026-06-06", "hibor_overnight": 1.85, "hibor_fixing_1m": 2.72100 },
+      { "end_of_date": "2026-06-05", "hibor_overnight": 1.90, "hibor_fixing_1m": 2.71518 }
     ]
   }
 }

@@ -8,7 +8,7 @@ const raw = JSON.parse(readFileSync(new URL("./fixtures/hkma-hibor.json", import
 
 test("normalizeHkma extracts a tenor into ascending Series", () => {
   const s = normalizeHkma(raw, {
-    id: "HIBOR_3M", label: "HIBOR 3M", field: "ir_3m",
+    id: "HIBOR_1M", label: "HIBOR 1M", field: "hibor_fixing_1m",
     unit: "%", freq: "daily", caveat: null,
   });
   assert.ok(s.points.length > 0);
@@ -18,13 +18,13 @@ test("normalizeHkma extracts a tenor into ascending Series", () => {
   }
   const dates = s.points.map(p => p.date);
   assert.deepEqual(dates, [...dates].sort()); // 升序
-  assert.equal(s.points[s.points.length - 1].value, 4.58); // 最新 3M
+  assert.equal(s.points[s.points.length - 1].value, 2.73435); // 最新 1M
   assert.equal(s.meta.source, "HKMA (HIBOR fixing)");
-  assert.equal(s.meta.asof, "2026-06-05");
+  assert.equal(s.meta.asof, "2026-06-09");
 });
 
 test("normalizeHkma returns empty Series when no records", () => {
-  const s = normalizeHkma({ result: { records: [] } }, { id: "HIBOR_1M", label: "x", field: "ir_1m" });
+  const s = normalizeHkma({ result: { records: [] } }, { id: "HIBOR_1M", label: "x", field: "hibor_fixing_1m" });
   assert.equal(s.points.length, 0);
   assert.equal(s.meta.asof, null);
 });
