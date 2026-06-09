@@ -1,0 +1,11 @@
+{
+  "name": "rates-fx-monitor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "利率与汇率监控仪表盘（自用）",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  }
+}
