@@ -1,0 +1,11 @@
+{
+  "header": { "success": true, "err_code": "0000", "err_msg": "No error found" },
+  "result": {
+    "datasize": 3,
+    "records": [
+      { "end_of_date": "2026-06-05", "ir_overnight": 4.05, "ir_1w": 4.15, "ir_1m": 4.32, "ir_3m": 4.58, "ir_12m": 4.71 },
+      { "end_of_date": "2026-06-04", "ir_overnight": 4.01, "ir_1w": 4.12, "ir_1m": 4.30, "ir_3m": 4.55, "ir_12m": 4.69 },
+      { "end_of_date": "2026-06-03", "ir_overnight": 3.98, "ir_1w": 4.10, "ir_1m": 4.28, "ir_3m": 4.52, "ir_12m": 4.66 }
+    ]
+  }
+}
