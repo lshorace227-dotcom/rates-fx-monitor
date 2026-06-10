@@ -1,7 +1,14 @@
 # 利率与汇率监控仪表盘（自用 · 无 API key）
 
-本地运行的 HTML 仪表盘：查询利率/汇率历史与**实时**值、画时间序列图、并生成多情景未来走势研判。
+HTML 仪表盘：查询利率/汇率历史与**实时**值、画时间序列图、并生成多情景未来走势研判。
 **全部数据源与分析均无需任何 API key。** 架构：HTML 前端 + 零依赖 Node 代理。
+
+**两种运行形态（同一份前端，自动检测）：**
+
+| 形态 | 数据 | 研判 | 适用 |
+|---|---|---|---|
+| **本地**（`node server.js`） | 实时（每次访问现抓） | 量化 + Claude 叙述（可含实时新闻） | 日常深度使用 |
+| **GitHub Pages**（静态） | 每日快照（Actions 每天澳门时间 12:00 重建） | 量化研判（确定性，CI 预生成） | 随处可看、手机可看 |
 
 ## 启动（无需任何 API key）
 
@@ -50,6 +57,21 @@ npm run update        # 或 node update-data.mjs；macOS 也可双击 update.com
 - HIBOR 3M/12M：每交易日 ~11:15（www.hkab.org.hk/en/rates/hibor）
 
 > HIBOR 隔夜/1M、SOFR/EFFR、美债、USD/CNY、DXY 都是自动实时，无需手动。
+
+## 部署到 GitHub Pages（每天中午自动更新）
+
+仓库已带 `.github/workflows/deploy.yml`：
+
+- **每天 04:00 UTC（= 澳门/香港 12:00）** 由 GitHub Actions 运行 `npm run build`（`build-snapshot.mjs`）——在 CI 里抓取全部数据源、计算量化研判，生成 `dist/`（前端 + `snapshot.json`）并发布到 GitHub Pages。
+- push 到 `main` 或手动触发（Actions → Run workflow）也会立即重建。
+
+首次部署步骤：
+1. `gh auth login`（一次性）
+2. `gh repo create rates-fx-monitor --public --source . --push`
+3. 仓库 Settings → Pages → Source 选 **GitHub Actions**（`gh api` 也可）
+4. Actions 跑完后访问 `https://<你的用户名>.github.io/rates-fx-monitor/`
+
+静态站说明：数据为**每日快照**（非盘中实时）；研判为**量化版**（无服务器跑不了本地 claude CLI）；页首横幅会标注快照生成时间。HKMA 偶发拦 CI 出口 IP，HIBOR 隔夜/1M 取不到时显示本地兜底值。
 
 ## 测试
 `npm test`（Node 内置 `node:test`，零依赖）。覆盖 cache/util/nyfed/yahoo/hkma/local-source/registry/quant/narrative/env。

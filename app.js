@@ -1,7 +1,58 @@
-// app.js
+// app.js — 双模式：
+//   live   = 本地 node server.js 在跑，走 /api/*（完整 Claude + 新闻研判、实时数据）
+//   static = 部署在 GitHub Pages，无服务器，回退读 snapshot.json（每日快照数据 + 量化研判）
 const $ = (sel) => document.querySelector(sel);
 
 let chart, selected = new Set(["SOFR", "HIBOR_3M"]), curRange = "1Y", registry = [];
+let MODE = "live", SNAP = null;
+const byId = {};
+
+// 浏览器端区间切片（static 模式用；与 lib/util.js 同逻辑）
+const RANGE_DAYS = { "1M": 31, "3M": 92, "6M": 183, "1Y": 366, "5Y": 1827 };
+function addDaysISO(iso, days) { const d = new Date(iso + "T00:00:00Z"); d.setUTCDate(d.getUTCDate() + days); return d.toISOString().slice(0, 10); }
+function sliceByRange(points, range) {
+  if (!points.length || range === "ALL" || !RANGE_DAYS[range]) return points.slice();
+  const cutoff = addDaysISO(points[points.length - 1].date, -RANGE_DAYS[range]);
+  return points.filter(p => p.date >= cutoff);
+}
+
+async function detectMode() {
+  try {
+    const r = await fetch("/api/registry", { cache: "no-store" });
+    if (!r.ok) throw new Error("no api");
+    registry = await r.json();
+    MODE = "live";
+  } catch {
+    MODE = "static";
+    SNAP = await fetch("snapshot.json", { cache: "no-store" }).then(r => r.json());
+    SNAP.instruments.forEach(it => { byId[it.id] = it; });
+    registry = SNAP.instruments.map(({ id, label, group, unit, freq, caveat }) => ({ id, label, group, unit, freq, caveat }));
+    const d = SNAP.generatedAt ? new Date(SNAP.generatedAt) : null;
+    if (d) $(".disclaimer").textContent =
+      `数据为每日快照（更新于 ${d.toLocaleString("zh-CN", { hour12: false })}）；研判为量化信号（确定性）。完整 Claude+实时新闻研判见本地版。`;
+  }
+}
+
+// ---------- 数据访问（按模式分流）----------
+async function getLatestRows() {
+  if (MODE === "live") return fetch("/api/latest").then(r => r.json());
+  return SNAP.instruments.map(it => it.error
+    ? { id: it.id, label: it.label, group: it.group, unit: it.unit, error: it.error }
+    : { id: it.id, label: it.label, group: it.group, unit: it.unit, caveat: it.caveat,
+        source: it.source, current: it.current, asof: it.asof, chg1m: it.chg1m, spark: it.spark });
+}
+async function getSeriesData(id, range) {
+  if (MODE === "live") return fetch(`/api/series?id=${id}&range=${range}`).then(r => r.json());
+  const it = byId[id] || {};
+  return { id, meta: { label: it.label, source: it.source, unit: it.unit, caveat: it.caveat, asof: it.asof },
+           points: sliceByRange(it.points || [], range) };
+}
+async function getInsight(id, news) {
+  if (MODE === "live") return fetch(`/api/insight?id=${id}&news=${news}`).then(r => r.json());
+  const it = byId[id] || {};
+  if (!it.quantInsight) return { error: "该标的暂无数据，无法研判" };
+  return { ...it.quantInsight, _snapshotAt: SNAP.generatedAt };
+}
 
 // ---------- 概览卡片 ----------
 function sparkline(values, w = 176, h = 28) {
@@ -11,13 +62,12 @@ function sparkline(values, w = 176, h = 28) {
   const pts = values.map((v, i) => `${(i * step).toFixed(1)},${(h - ((v - min) / span) * h).toFixed(1)}`).join(" ");
   return `<svg width="${w}" height="${h}"><polyline points="${pts}" fill="none" stroke="#58a6ff" stroke-width="1.5"/></svg>`;
 }
-
 function fmt(v, unit) { return v == null ? "—" : (unit === "%" ? v.toFixed(2) + "%" : v.toFixed(4)); }
 function chgClass(v) { return v == null ? "" : (v >= 0 ? "up" : "down"); }
 function chgText(v, unit) { if (v == null) return ""; const s = v >= 0 ? "▲" : "▼"; return `${s} ${Math.abs(v).toFixed(unit === "%" ? 2 : 4)}`; }
 
 async function loadOverview() {
-  const rows = await fetch("/api/latest").then(r => r.json());
+  const rows = await getLatestRows();
   for (const group of ["利率", "汇率"]) {
     const box = document.getElementById(`cards-${group}`);
     box.innerHTML = "";
@@ -40,8 +90,7 @@ async function loadOverview() {
 }
 
 // ---------- 选择器 + 研判下拉 ----------
-async function loadRegistry() {
-  registry = await fetch("/api/registry").then(r => r.json());
+function buildPickers() {
   const picker = $("#picker"); picker.innerHTML = "";
   for (const e of registry) {
     const wrap = document.createElement("label");
@@ -60,8 +109,7 @@ async function loadRegistry() {
 async function drawChart() {
   if (!chart) chart = echarts.init(document.getElementById("chart"), "dark");
   const ids = [...selected];
-  const series = await Promise.all(ids.map(id =>
-    fetch(`/api/series?id=${id}&range=${curRange}`).then(r => r.json())));
+  const series = await Promise.all(ids.map(id => getSeriesData(id, curRange)));
   const normalize = $("#normalize")?.checked;
   chart.setOption({
     backgroundColor: "transparent",
@@ -76,9 +124,7 @@ async function drawChart() {
       const base = normalize && pts.length ? pts[0].value : null;
       return {
         name: s.meta?.label || s.id,
-        type: "line",
-        showSymbol: pts.length <= 2,   // 单点/稀疏序列显示为可见圆点，否则隐藏
-        smooth: false,
+        type: "line", showSymbol: pts.length <= 2, smooth: false,
         data: pts.map(p => [p.date, base ? +(p.value / base * 100).toFixed(2) : p.value]),
       };
     }),
@@ -98,8 +144,20 @@ function initRanges() {
   window.addEventListener("resize", () => chart && chart.resize());
 }
 
-// ---------- AI 研判 ----------
+// ---------- 研判 ----------
 function renderInsight(ins) {
+  const isQuantStatic = ins.engine === "quant" && ins._snapshotAt;
+  const engineBadge = ins.engine === "claude+news"
+    ? `<span class="badge ok">Claude + 实时新闻</span>`
+    : ins.engine === "claude"
+      ? `<span class="badge ok">Claude 叙述</span>`
+      : isQuantStatic
+        ? `<span class="badge ok">量化研判 · 每日快照</span>`
+        : `<span class="badge warn">纯量化兜底</span>`;
+  const g = ins.signals || {};
+  const signalRow = g.trend
+    ? `<div class="meta-row">量化信号：趋势 <b>${g.trend}</b> · z=${g.zScore} · 近端动量 ${g.shortMom} · 日波动 ${g.vol} · 区间位置 ${Math.round((g.rangePos ?? 0.5) * 100)}%</div>`
+    : "";
   const order = { "上行": 0, "中性": 1, "下行": 2 };
   const horizons = ins.horizons.map(h => {
     const scns = [...h.scenarios].sort((a, b) => (order[a.name] ?? 9) - (order[b.name] ?? 9));
@@ -114,18 +172,9 @@ function renderInsight(ins) {
       </div>`).join("");
     return `<div class="horizon"><h3>${h.horizon}</h3>${rows}</div>`;
   }).join("");
-  const engineBadge = ins.engine === "claude+news"
-    ? `<span class="badge ok">Claude + 实时新闻</span>`
-    : ins.engine === "claude"
-      ? `<span class="badge ok">Claude 叙述</span>`
-      : `<span class="badge warn">纯量化兜底</span>`;
   const sourcesBlock = Array.isArray(ins.sources) && ins.sources.length
     ? `<div class="horizon"><h3>引用新闻来源</h3>${ins.sources.map(s =>
         `<div class="imp">· <a href="${s.url}" target="_blank" rel="noopener">${s.title || s.url}</a></div>`).join("")}</div>`
-    : "";
-  const g = ins.signals || {};
-  const signalRow = g.trend
-    ? `<div class="meta-row">量化信号：趋势 <b>${g.trend}</b> · z=${g.zScore} · 近端动量 ${g.shortMom} · 日波动 ${g.vol} · 区间位置 ${Math.round((g.rangePos ?? 0.5) * 100)}%</div>`
     : "";
   return `
     <div class="meta-row">${engineBadge} 标的 ${ins.label || ins.instrument} · 截至 ${ins.asof} · 当前 ${ins.current_level}${ins.engine_note ? " · " + ins.engine_note : ""}</div>
@@ -137,21 +186,24 @@ function renderInsight(ins) {
       <div class="imp">关注：${(ins.watch_items || []).join("；")}</div>
     </div>
     ${sourcesBlock}
-    <div class="meta-row">⚠ 概率由量化信号确定；叙述由 Claude 生成，非投资建议。</div>`;
+    <div class="meta-row">⚠ 概率由量化信号确定；${ins.engine && ins.engine.startsWith("claude") ? "叙述由 Claude 生成" : "叙述为量化模板"}，非投资建议。</div>`;
 }
 
 function initInsight() {
+  if (MODE === "static") {
+    const news = $("#insight-news"); if (news) news.closest("label").style.display = "none";
+    $("#insight-run").textContent = "查看研判";
+  }
   $("#insight-run").addEventListener("click", async () => {
     const id = $("#insight-id").value;
     const news = $("#insight-news")?.checked ? 1 : 0;
     const status = $("#insight-status"), out = $("#insight-output");
-    status.textContent = news
+    status.textContent = MODE === "static" ? "" : (news
       ? "生成中…（Claude 检索实时新闻 + 深度叙述，约 1–3 分钟；claude 不可用则退回纯量化）"
-      : "生成中…（量化 + Claude 叙述约 40–90s；claude 不可用则退回纯量化）";
+      : "生成中…（量化 + Claude 叙述约 40–90s；claude 不可用则退回纯量化）");
     out.innerHTML = "";
     try {
-      const res = await fetch(`/api/insight?id=${id}&news=${news}`);
-      const data = await res.json();
+      const data = await getInsight(id, news);
       if (data.error) { status.textContent = "⚠ " + data.error; return; }
       status.textContent = "";
       out.innerHTML = renderInsight(data);
@@ -163,8 +215,9 @@ function initInsight() {
 
 // ---------- 启动 ----------
 async function main() {
+  await detectMode();
   await loadOverview();
-  await loadRegistry();
+  buildPickers();
   initRanges();
   await drawChart();
   initInsight();
