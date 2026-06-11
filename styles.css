@@ -1,39 +1,111 @@
 /* styles.css */
-:root { --bg:#0e1116; --panel:#161b22; --line:#222a35; --fg:#e6edf3; --muted:#8b949e; --up:#f85149; --down:#3fb950; --accent:#58a6ff; }
+:root { --bg:#0e1116; --panel:#161b22; --line:#222a35; --fg:#e6edf3; --muted:#8b949e; --up:#f85149; --down:#3fb950; --accent:#58a6ff; --neutral:#6e7681; }
 * { box-sizing: border-box; }
 body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 -apple-system,"PingFang SC",system-ui,sans-serif; }
-header { padding:16px 24px; border-bottom:1px solid var(--line); }
+
+/* ---------- 顶部 ---------- */
+header { padding:14px 24px 10px; border-bottom:1px solid var(--line); }
+.header-row { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 h1 { font-size:18px; margin:0; }
-.disclaimer { color:var(--muted); font-size:12px; margin:4px 0 0; }
+#status-bar { display:flex; align-items:center; gap:8px; }
+.mode-badge { font-size:12px; padding:2px 10px; border-radius:12px; border:1px solid var(--line); color:var(--muted); }
+.mode-badge.live { color:var(--down); border-color:var(--down); }
+.mode-badge.static { color:var(--accent); border-color:var(--accent); }
+#refresh-btn { background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:6px; padding:3px 10px; cursor:pointer; font-size:12px; }
+#refresh-btn:hover { border-color:var(--accent); color:var(--accent); }
+#refresh-btn.spin { pointer-events:none; opacity:.6; }
+.disclaimer { color:var(--muted); font-size:12px; margin:6px 0 0; }
+
 section { padding:16px 24px; }
 h2 { font-size:14px; color:var(--muted); font-weight:600; margin:0 0 12px; }
 .group-title { font-size:12px; color:var(--accent); margin:8px 0 6px; }
+
+/* ---------- 概览卡片 ---------- */
 .card-group { display:flex; flex-wrap:wrap; gap:12px; margin-bottom:12px; }
-.card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; width:200px; }
-.card .label { font-size:13px; }
+.card { background:var(--panel); border:1px solid var(--line); border-left:3px solid transparent; border-radius:8px; padding:12px; width:204px; cursor:pointer; transition:transform .12s ease, border-color .12s ease, box-shadow .12s ease; }
+.card:hover { transform:translateY(-2px); border-color:#39424e; box-shadow:0 4px 14px rgba(0,0,0,.35); }
+.card.on { border-left-color:var(--accent); }
+.card.err { opacity:.55; cursor:default; }
+.card.err:hover { transform:none; box-shadow:none; }
+.card .label { font-size:13px; color:var(--fg); }
 .card .value { font-size:22px; font-weight:600; margin:2px 0; }
+.card .value.vup { color:var(--up); } .card .value.vdown { color:var(--down); }
+.card .chg { font-size:12px; }
 .card .chg.up { color:var(--up); } .card .chg.down { color:var(--down); }
-.card .src { color:var(--muted); font-size:11px; margin-top:6px; word-break:break-all; }
-.card.err { opacity:.6; }
 .card svg { display:block; margin-top:6px; }
-#picker { display:flex; flex-wrap:wrap; gap:8px 16px; margin-bottom:8px; }
-#picker label { color:var(--fg); font-size:13px; cursor:pointer; }
-#ranges { display:flex; gap:6px; margin-bottom:8px; }
-#ranges button, #insight-controls button { background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:6px; padding:4px 10px; cursor:pointer; }
+.card .src { color:var(--muted); font-size:11px; margin-top:6px; word-break:break-all; }
+/* 52周区间位置条 */
+.rangebar { position:relative; height:4px; background:var(--line); border-radius:2px; margin:8px 0 2px; }
+.rangebar .dot { position:absolute; top:50%; width:8px; height:8px; border-radius:50%; background:var(--accent); transform:translate(-50%,-50%); box-shadow:0 0 4px rgba(88,166,255,.7); }
+.rangebar-lbl { display:flex; justify-content:space-between; color:var(--muted); font-size:10px; }
+
+/* ---------- 图表区 ---------- */
+#presets { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+.presets-label { color:var(--muted); font-size:12px; }
+#presets button { background:linear-gradient(180deg,#1b2330,#161b22); color:var(--fg); border:1px solid var(--line); border-radius:14px; padding:4px 14px; cursor:pointer; font-size:12px; transition:border-color .12s; }
+#presets button:hover { border-color:var(--accent); color:var(--accent); }
+#picker { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
+.chip { background:var(--panel); color:var(--muted); border:1px solid var(--line); border-radius:14px; padding:3px 12px; cursor:pointer; font-size:12px; transition:all .12s; user-select:none; }
+.chip:hover { border-color:#39424e; color:var(--fg); }
+.chip.on { background:rgba(88,166,255,.15); border-color:var(--accent); color:var(--accent); }
+#chart-toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:8px; }
+#ranges { display:flex; gap:6px; }
+#ranges button { background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:6px; padding:4px 10px; cursor:pointer; }
 #ranges button.active { border-color:var(--accent); color:var(--accent); }
-#chart-opts { margin:6px 0; font-size:12px; color:var(--muted); }
-#chart-opts label { cursor:pointer; }
-#chart { width:100%; height:420px; background:var(--panel); border:1px solid var(--line); border-radius:8px; margin-top:8px; }
-#insight-controls { display:flex; gap:8px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+#chart-opts { font-size:12px; color:var(--muted); cursor:pointer; }
+#chart { width:100%; height:440px; background:var(--panel); border:1px solid var(--line); border-radius:8px; }
+
+/* ---------- 研判区 ---------- */
+#insight-controls { display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap; }
+#insight-controls label { font-size:12px; color:var(--muted); cursor:pointer; }
 #insight-id { background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:6px; padding:4px 8px; }
-#insight-status { color:var(--muted); font-size:12px; }
-.horizon { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:12px; }
-.horizon h3 { margin:0 0 8px; font-size:14px; color:var(--accent); }
-.scn { display:grid; grid-template-columns:84px 1fr; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
-.scn .name { font-weight:600; } .scn .prob { color:var(--muted); font-size:12px; }
-.scn .bar { height:8px; background:var(--accent); border-radius:4px; margin-bottom:6px; min-width:2px; }
-.scn .imp { color:var(--muted); font-size:12px; margin-top:2px; }
-.meta-row { color:var(--muted); font-size:12px; margin:8px 0; }
+#insight-run { background:var(--panel); color:var(--fg); border:1px solid var(--line); border-radius:6px; padding:4px 14px; cursor:pointer; }
+#insight-run:hover { border-color:var(--accent); color:var(--accent); }
+#insight-status { color:var(--muted); font-size:12px; display:inline-flex; align-items:center; gap:6px; }
+.spinner { width:12px; height:12px; border:2px solid var(--line); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; display:inline-block; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
 .badge { display:inline-block; padding:1px 8px; border-radius:10px; font-size:11px; margin-right:6px; border:1px solid var(--line); }
 .badge.ok { color:var(--down); border-color:var(--down); }
 .badge.warn { color:#d29922; border-color:#d29922; }
+
+/* 量化信号标尺 */
+.scales { display:flex; gap:20px; flex-wrap:wrap; margin:10px 0; }
+.scale { width:230px; }
+.scale .ttl { font-size:11px; color:var(--muted); margin-bottom:4px; display:flex; justify-content:space-between; }
+.scale .track { position:relative; height:6px; border-radius:3px; background:linear-gradient(90deg,var(--down),var(--neutral),var(--up)); opacity:.9; }
+.scale .track.plain { background:var(--line); }
+.scale .mark { position:absolute; top:50%; width:10px; height:10px; border-radius:50%; background:#fff; border:2px solid var(--accent); transform:translate(-50%,-50%); }
+.scale .ends { display:flex; justify-content:space-between; color:var(--muted); font-size:10px; margin-top:2px; }
+
+/* 三色堆叠概率条 + 折叠档位 */
+details.horizon { background:var(--panel); border:1px solid var(--line); border-radius:8px; margin-bottom:10px; overflow:hidden; }
+details.horizon summary { list-style:none; cursor:pointer; padding:10px 14px; display:flex; align-items:center; gap:12px; }
+details.horizon summary::-webkit-details-marker { display:none; }
+details.horizon summary .h-name { font-size:13px; color:var(--accent); font-weight:600; min-width:56px; }
+.probbar { flex:1; display:flex; height:18px; border-radius:9px; overflow:hidden; min-width:180px; }
+.probbar .seg { display:flex; align-items:center; justify-content:center; font-size:10px; color:#fff; white-space:nowrap; overflow:hidden; }
+.probbar .seg.s-up { background:rgba(248,81,73,.75); }
+.probbar .seg.s-mid { background:rgba(110,118,129,.65); }
+.probbar .seg.s-down { background:rgba(63,185,80,.7); }
+summary .caret { color:var(--muted); font-size:11px; transition:transform .15s; }
+details[open] summary .caret { transform:rotate(90deg); }
+.h-body { padding:0 14px 12px; }
+.scn { display:grid; grid-template-columns:84px 1fr; gap:10px; padding:8px 0; border-top:1px solid var(--line); }
+.scn .name { font-weight:600; } .scn .prob { color:var(--muted); font-size:12px; }
+.scn .imp { color:var(--muted); font-size:12px; margin-top:2px; }
+.horizon-static { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:12px; margin-bottom:12px; }
+.horizon-static h3 { margin:0 0 8px; font-size:14px; color:var(--accent); }
+.meta-row { color:var(--muted); font-size:12px; margin:8px 0; }
+.imp a { color:var(--accent); }
+
+/* ---------- 响应式 ---------- */
+@media (max-width: 768px) {
+  header, section { padding-left:14px; padding-right:14px; }
+  .card { width:calc(50% - 6px); }
+  #picker { flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; }
+  .chip { flex:0 0 auto; }
+  #chart { height:340px; }
+  .scale { width:100%; }
+  .probbar { min-width:120px; }
+}
