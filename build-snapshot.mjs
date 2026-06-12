@@ -36,9 +36,10 @@ for (const e of REGISTRY) {
 }
 
 const snapshot = { generatedAt: new Date().toISOString(), instruments };
-mkdirSync(DIST, { recursive: true });
+mkdirSync(DIST + "icons", { recursive: true });
 writeFileSync(DIST + "snapshot.json", JSON.stringify(snapshot));
-for (const f of ["index.html", "app.js", "styles.css"]) copyFileSync(ROOT + f, DIST + f);
+for (const f of ["index.html", "app.js", "styles.css", "manifest.webmanifest", "sw.js"]) copyFileSync(ROOT + f, DIST + f);
+for (const f of ["icon-192.png", "icon-512.png", "apple-touch-icon.png"]) copyFileSync(ROOT + "icons/" + f, DIST + "icons/" + f);
 
 const ok = instruments.filter(i => !i.error).length;
 console.log(`\n✅ snapshot built: ${ok}/${instruments.length} instruments OK, generatedAt ${snapshot.generatedAt}`);
